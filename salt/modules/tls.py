@@ -737,11 +737,11 @@ def create_self_signed_cert(tls_dir='tls',
     return ret
 
 
-def create_ca_signed_cert(ca_name, 
-                          CN, 
-                          days=365, 
-                          cacert_path=None, 
-                          digest='sha256', 
+def create_ca_signed_cert(ca_name,
+                          CN,
+                          days=365,
+                          cacert_path=None,
+                          digest='sha256',
                           replace=False,
                           **extensions):
     '''
