@@ -16,7 +16,7 @@ Authority states. The CA can be set as either absent or present.
     mydomain.dom:
       tls_ca.present:
         - bits: 2048
-        - days: 5478
+        - expires: "2030-05-21"
         - CN: domain.dom
         - C: US
         - ST: Utah
@@ -54,7 +54,7 @@ def __virtual__():
     return __virtualname__ if 'tls.create_ca' in __salt__ else False
 
 
-def _changes(ca_name,
+def _changes(name,
              bits=2048,
              expires='',
              CN='localhost',
@@ -87,26 +87,26 @@ def _changes(ca_name,
             'Failed parsing ISO 8601 date value: {0}'.format(expires))
 
     # check if CA exists in the correct state
-    if not __salt__['tls.ca_exists'](ca_name, cacert_path=cacert_path):
+    if not __salt__['tls.ca_exists'](name, cacert_path=cacert_path):
         return False
-    capath = __salt__['tls.get_ca'](ca_name, cacert_path=cacert_path)
+    capath = __salt__['tls.get_ca'](name, cacert_path=cacert_path)
     cainfo = __salt__['tls.cert_info'](capath)
 
     for attribute in ['CN', 'C', 'ST', 'L', 'OU', 'emailAddress']:
         # check if both sides are defined or undefined
-        if bool(eval(attribute)) != (attribute in cainfo['subject'] and
+        if bool(locals()[attribute]) != (attribute in cainfo['subject'] and
                                      bool(cainfo['subject'][attribute])):
-            change[attribute] = eval(attribute)
+            change[attribute] = locals()[attribute]
         # check that the attributes are the same
         elif (attribute in cainfo['subject'] and
-                eval(attribute) != cainfo['subject'][attribute]):
-            change[attribute] = eval(attribute)
+                locals()[attribute] != cainfo['subject'][attribute]):
+            change[attribute] = locals()[attribute]
     if datetime.datetime.utcfromtimestamp(cainfo['not_after']).date() != expires:
         change['expires'] = expires
     return change
 
 
-def present(ca_name,
+def present(name,
             bits=2048,
             expires='',
             CN='localhost',
@@ -122,7 +122,7 @@ def present(ca_name,
     '''
     Ensure that the root certificate is present with the specified properties
 
-    ca_name
+    name
         name of the CA
     bits
         number of RSA key bits, Default is ``2048``
@@ -155,7 +155,7 @@ def present(ca_name,
     ret = {'name': name,
            'changes': {},
            'result': True,
-           'comment': comment.format(ca_name)
+           'comment': comment.format(name)
            }
 
     # set days based on expires
@@ -173,18 +173,18 @@ def present(ca_name,
         return ret
 
     # check if CA exists in the correct state
-    changes = _changes(ca_name,
-                       bits,
-                       expires,
-                       CN,
-                       C,
-                       ST,
-                       L,
-                       O,
-                       OU,
-                       emailAddress,
-                       cacert_path,
-                       digest)
+    changes = _changes(name,
+                       bits=bits,
+                       expires=expires,
+                       CN=CN,
+                       C=C,
+                       ST=ST,
+                       L=L,
+                       O=O,
+                       OU=OU,
+                       emailAddress=emailAddress,
+                       cacert_path=cacert_path,
+                       digest=digest)
     if changes:
         if __opts__['test']:
             ret['result'] = None
@@ -194,7 +194,7 @@ def present(ca_name,
                 ret['comment'] += '{0}: {1}\n'.format(key, val)
             return ret
         # The certificate is present
-        ret['changes'] = __salt__['tls.create_ca'](ca_name,
+        ret['changes'] = __salt__['tls.create_ca'](name,
                                                    bits,
                                                    expires,
                                                    CN,
@@ -209,24 +209,24 @@ def present(ca_name,
                                                    replace=True)
         if ret['changes']:
             ret['comment'] = 'Replaced CA Certificate "{0}"'.format(
-                ca_name)
+                name)
         else:
             ret['comment'] = 'Failed to replace CA Certificate "{0}"'.format(
-                ca_name)
+                name)
             ret['result'] = False
             return ret
-        changes = _changes(ca_name,
-                           bits,
-                           expires,
-                           CN,
-                           C,
-                           ST,
-                           L,
-                           O,
-                           OU,
-                           emailAddress,
-                           cacert_path,
-                           digest)
+        changes = _changes(name,
+                           bits=bits,
+                           expires=expires,
+                           CN=CN,
+                           C=C,
+                           ST=ST,
+                           L=L,
+                           O=O,
+                           OU=OU,
+                           emailAddress=emailAddress,
+                           cacert_path=cacert_path,
+                           digest=digest)
         if changes:
             ret['comment'] = 'These values could not be changed: {0}'.format(
                 changes)
@@ -237,9 +237,9 @@ def present(ca_name,
         if __opts__['test']:
             ret['result'] = None
             ret['comment'] = 'CA certificate "{0}" set to be added.'.format(
-                ca_name)
+                name)
             return ret
-        ret['changes'] = __salt__['tls.create_ca'](ca_name,
+        ret['changes'] = __salt__['tls.create_ca'](name,
                                                    bits,
                                                    expires,
                                                    CN,
@@ -253,9 +253,42 @@ def present(ca_name,
                                                    digest)
         if ret['changes']:
             ret['comment'] = 'Created CA Certificate "{0}"'.format(
-                ca_name)
+                name)
         else:
             ret['comment'] = 'Failed to create CA Certificate "{0}"'.format(
-                ca_name)
+                name)
             ret['result'] = False
         return ret
+
+
+def absent(name, cacert_path=None):
+    '''
+    Ensure that the named CA is absent from the specified path
+
+    name
+        name of the CA
+    cacert_path
+        absolute path to ca certificates root directory
+    '''
+    ret = {'name': name,
+           'changes': {},
+           'result': True,
+           'comment': ''}
+
+    # if the certificate exists, make it not exist
+    if __salt__['tls.ca_exists'](name, cacert_path=cacert_path):
+        if __opts__['test']:
+            ret['result'] = None
+            ret['comment'] = 'CA Certificate "{0}" set for removal'.format(
+                name)
+            return ret
+        capath = __salt__['tls.get_ca'](name, cacert_path=cacert_path)
+        os.remove(capath)
+        ret['comment'] = 'Removed CA Certificate "{0}"'.format(name)
+        # also remove the private key
+        os.remove("{0}key".format(capath[:-3]))
+        ret['comment'] += ' Removed CA private key "{0}"'.format(name)
+        ret['changes'][name] = 'removed'
+    else:
+        ret['comment'] = 'CA Certificate "{0}" is not present.'.format(name)
+    return ret
