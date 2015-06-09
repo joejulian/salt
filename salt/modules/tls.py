@@ -110,14 +110,14 @@ def _new_serial(ca_name, CN):
     opts_hash_type = __opts__.get('hash_type', 'md5')
     hashtype = getattr(hashlib, opts_hash_type)
     hashnum = int(
-            hashtype(
-                '{0}_{1}_{2}'.format(
-                    ca_name,
-                    CN,
-                    int(time.time()))
-                ).hexdigest(),
-            16
-            )
+        hashtype(
+            '{0}_{1}_{2}'.format(
+                ca_name,
+                CN,
+                int(time.time()))
+        ).hexdigest(),
+        16
+    )
     log.debug('Hashnum: {0}'.format(hashnum))
 
     # record the hash somewhere
@@ -149,22 +149,22 @@ def _write_cert_to_database(ca_name, cert, cacert_path=None):
     expire_date = cert.get_notAfter()
     serial_number = cert.get_serial_number()
 
-    #gotta prepend a /
+    # gotta prepend a /
     subject = '/'
 
     # then we can add the rest of the subject
     subject += '/'.join(
-            ['{0}={1}'.format(
-                x, y
-                ) for x, y in cert.get_subject().get_components()]
-            )
+        ['{0}={1}'.format(
+            x, y
+        ) for x, y in cert.get_subject().get_components()]
+    )
     subject += '\n'
 
     index_data = 'V\t{0}\t\t{1}\tunknown\t{2}'.format(
-            expire_date,
-            serial_number,
-            subject
-            )
+        expire_date,
+        serial_number,
+        subject
+    )
 
     with salt.utils.fopen(index_file, 'a+') as ofile:
         ofile.write(index_data)
@@ -211,7 +211,7 @@ def maybe_fix_ssl_version(ca_name, cacert_path=None):
                     bits = 2048
                 try:
                     days = (datetime.strptime(cert.get_notAfter(),
-                                                       '%Y%m%d%H%M%SZ') -
+                                              '%Y%m%d%H%M%SZ') -
                             datetime.now()).days
                 except (ValueError, TypeError):
                     days = 365
@@ -576,31 +576,31 @@ def create_csr(ca_name,
 
     # Write private key and request
     with salt.utils.fopen('{0}/{1}/certs/{2}.key'.format(
-                                    cert_base_path(),
-                                    ca_name, CN), 'w+') as priv_key:
+            cert_base_path(),
+            ca_name, CN), 'w+') as priv_key:
         priv_key.write(
-                OpenSSL.crypto.dump_privatekey(OpenSSL.crypto.FILETYPE_PEM, key)
-                )
+            OpenSSL.crypto.dump_privatekey(OpenSSL.crypto.FILETYPE_PEM, key)
+        )
 
     with salt.utils.fopen(csr_f, 'w+') as csr:
         csr.write(
-                OpenSSL.crypto.dump_certificate_request(
-                    OpenSSL.crypto.FILETYPE_PEM,
-                    req
-                    )
-                )
+            OpenSSL.crypto.dump_certificate_request(
+                OpenSSL.crypto.FILETYPE_PEM,
+                req
+            )
+        )
 
     ret = 'Created Private Key: "{0}/{1}/certs/{2}.key." '.format(
-                    cert_base_path(),
-                    ca_name,
-                    CN
-                    )
+        cert_base_path(),
+        ca_name,
+        CN
+    )
     ret += 'Created CSR for "{0}": "{1}/{2}/certs/{3}.csr."'.format(
-                    ca_name,
-                    cert_base_path(),
-                    ca_name,
-                    CN
-                    )
+        ca_name,
+        cert_base_path(),
+        ca_name,
+        CN
+    )
 
     return ret
 
@@ -687,7 +687,7 @@ def create_self_signed_cert(tls_dir='tls',
     if not replace and os.path.exists(
             '{0}/{1}/certs/{2}.crt'.format(cert_base_path(),
                                            tls_dir, CN)
-            ):
+    ):
         return 'Certificate "{0}" already exists'.format(CN)
 
     key = OpenSSL.crypto.PKey()
@@ -716,37 +716,37 @@ def create_self_signed_cert(tls_dir='tls',
 
     # Write private key and cert
     with salt.utils.fopen(
-                '{0}/{1}/certs/{2}.key'.format(cert_base_path(),
-                                               tls_dir, CN),
-                'w+'
-                ) as priv_key:
+        '{0}/{1}/certs/{2}.key'.format(cert_base_path(),
+                                       tls_dir, CN),
+        'w+'
+    ) as priv_key:
         priv_key.write(
-                OpenSSL.crypto.dump_privatekey(OpenSSL.crypto.FILETYPE_PEM, key)
-                )
+            OpenSSL.crypto.dump_privatekey(OpenSSL.crypto.FILETYPE_PEM, key)
+        )
 
     with salt.utils.fopen('{0}/{1}/certs/{2}.crt'.format(cert_base_path(),
                                                          tls_dir,
                                                          CN
                                                          ), 'w+') as crt:
         crt.write(
-                OpenSSL.crypto.dump_certificate(
-                    OpenSSL.crypto.FILETYPE_PEM,
-                    cert
-                    )
-                )
+            OpenSSL.crypto.dump_certificate(
+                OpenSSL.crypto.FILETYPE_PEM,
+                cert
+            )
+        )
 
     _write_cert_to_database(tls_dir, cert)
 
     ret = 'Created Private Key: "{0}/{1}/certs/{2}.key." '.format(
-                    cert_base_path(),
-                    tls_dir,
-                    CN
-                    )
+        cert_base_path(),
+        tls_dir,
+        CN
+    )
     ret += 'Created Certificate: "{0}/{1}/certs/{2}.crt."'.format(
-                    cert_base_path(),
-                    tls_dir,
-                    CN
-                    )
+        cert_base_path(),
+        tls_dir,
+        CN
+    )
 
     return ret
 
@@ -836,15 +836,15 @@ def create_ca_signed_cert(ca_name,
                                                                ca_name,
                                                                ca_name)) as fhr:
             ca_cert = OpenSSL.crypto.load_certificate(
-                    OpenSSL.crypto.FILETYPE_PEM, fhr.read()
-                )
+                OpenSSL.crypto.FILETYPE_PEM, fhr.read()
+            )
         with salt.utils.fopen('{0}/{1}/{2}_ca_cert.key'.format(cert_base_path(),
                                                                ca_name,
                                                                ca_name)) as fhr:
             ca_key = OpenSSL.crypto.load_privatekey(
-                    OpenSSL.crypto.FILETYPE_PEM,
-                    fhr.read()
-                )
+                OpenSSL.crypto.FILETYPE_PEM,
+                fhr.read()
+            )
     except IOError:
         return 'There is no CA named "{0}"'.format(ca_name)
 
@@ -853,9 +853,9 @@ def create_ca_signed_cert(ca_name,
                                                              ca_name,
                                                              CN)) as fhr:
             req = OpenSSL.crypto.load_certificate_request(
-                    OpenSSL.crypto.FILETYPE_PEM,
-                    fhr.read()
-                    )
+                OpenSSL.crypto.FILETYPE_PEM,
+                fhr.read()
+            )
     except IOError:
         return 'There is no CSR that matches the CN "{0}"'.format(CN)
 
@@ -867,8 +867,10 @@ def create_ca_signed_cert(ca_name,
         # recent pyopenssl distros
         native_exts_obj = OpenSSL._util.lib.X509_REQ_get_extensions(req._req)
         for i in _range(OpenSSL._util.lib.sk_X509_EXTENSION_num(native_exts_obj)):
-            ext = OpenSSL.crypto.X509Extension.__new__(OpenSSL.crypto.X509Extension)
-            ext._extension = OpenSSL._util.lib.sk_X509_EXTENSION_value(native_exts_obj, i)
+            ext = OpenSSL.crypto.X509Extension.__new__(
+                OpenSSL.crypto.X509Extension)
+            ext._extension = OpenSSL._util.lib.sk_X509_EXTENSION_value(
+                native_exts_obj, i)
             exts.append(ext)
     except Exception:
         log.error('Support for extensions is not available, upgrade PyOpenSSL')
@@ -905,18 +907,18 @@ def create_ca_signed_cert(ca_name,
             OpenSSL.crypto.dump_certificate(
                 OpenSSL.crypto.FILETYPE_PEM,
                 cert
-                )
             )
+        )
 
     _write_cert_to_database(ca_name, cert)
 
     return ('Created Certificate for "{0}": '
             '"{1}/{2}/certs/{3}.crt"').format(
-                    ca_name,
-                    cert_base_path(),
-                    ca_name,
-                    CN
-                    )
+        ca_name,
+        cert_base_path(),
+        ca_name,
+        CN
+    )
 
 
 def create_pkcs12(ca_name, CN, passphrase='', cacert_path=None, replace=False):
@@ -963,7 +965,7 @@ def create_pkcs12(ca_name, CN, passphrase='', cacert_path=None, replace=False):
                 cert_base_path(),
                 ca_name,
                 CN)
-            ):
+    ):
         return 'Certificate "{0}" already exists'.format(CN)
 
     try:
@@ -971,9 +973,9 @@ def create_pkcs12(ca_name, CN, passphrase='', cacert_path=None, replace=False):
                                                                ca_name,
                                                                ca_name)) as fhr:
             ca_cert = OpenSSL.crypto.load_certificate(
-                    OpenSSL.crypto.FILETYPE_PEM,
-                    fhr.read()
-                )
+                OpenSSL.crypto.FILETYPE_PEM,
+                fhr.read()
+            )
     except IOError:
         return 'There is no CA named "{0}"'.format(ca_name)
 
@@ -982,16 +984,16 @@ def create_pkcs12(ca_name, CN, passphrase='', cacert_path=None, replace=False):
                                                              ca_name,
                                                              CN)) as fhr:
             cert = OpenSSL.crypto.load_certificate(
-                    OpenSSL.crypto.FILETYPE_PEM,
-                    fhr.read()
-                )
+                OpenSSL.crypto.FILETYPE_PEM,
+                fhr.read()
+            )
         with salt.utils.fopen('{0}/{1}/certs/{2}.key'.format(cert_base_path(),
                                                              ca_name,
                                                              CN)) as fhr:
             key = OpenSSL.crypto.load_privatekey(
-                    OpenSSL.crypto.FILETYPE_PEM,
-                    fhr.read()
-                    )
+                OpenSSL.crypto.FILETYPE_PEM,
+                fhr.read()
+            )
     except IOError:
         return 'There is no certificate that matches the CN "{0}"'.format(CN)
 
@@ -1008,11 +1010,11 @@ def create_pkcs12(ca_name, CN, passphrase='', cacert_path=None, replace=False):
 
     return ('Created PKCS#12 Certificate for "{0}": '
             '"{1}/{2}/certs/{3}.p12"').format(
-                    CN,
-                    cert_base_path(),
-                    ca_name,
-                    CN
-                    )
+        CN,
+        cert_base_path(),
+        ca_name,
+        CN
+    )
 
 
 def cert_info(cert_path, digest='sha256'):
@@ -1035,9 +1037,9 @@ def cert_info(cert_path, digest='sha256'):
 
     with salt.utils.fopen(cert_path) as cert_file:
         cert = OpenSSL.crypto.load_certificate(
-                OpenSSL.crypto.FILETYPE_PEM,
-                cert_file.read()
-            )
+            OpenSSL.crypto.FILETYPE_PEM,
+            cert_file.read()
+        )
     ret = {
         'fingerprint': cert.digest(digest),
         'subject': dict(cert.get_subject().get_components()),
@@ -1058,7 +1060,8 @@ def cert_info(cert_path, digest='sha256'):
         valid_names = set()
         for name in ret['extensions']['subjectAltName']._subjectAltNameString().split(", "):
             if not name.startswith('DNS:'):
-                log.error('Cert {0} has an entry ({1}) which does not start with DNS:'.format(cert_path, name))
+                log.error('Cert {0} has an entry ({1}) which does not start with DNS:'.format(
+                    cert_path, name))
             else:
                 valid_names.add(name[4:])
         ret['subject_alt_names'] = valid_names
@@ -1072,14 +1075,14 @@ def cert_info(cert_path, digest='sha256'):
 if __name__ == '__main__':
     #create_ca('koji', days=365, **cert_sample_meta)
     create_csr(
-            'koji',
-            CN='test_system',
-            C="US",
-            ST="Utah",
-            L="Centerville",
-            O="SaltStack",
-            OU=None,
-            emailAddress='test_system@saltstack.org'
-            )
+        'koji',
+        CN='test_system',
+        C="US",
+        ST="Utah",
+        L="Centerville",
+        O="SaltStack",
+        OU=None,
+        emailAddress='test_system@saltstack.org'
+    )
     create_ca_signed_cert('koji', 'test_system')
     create_pkcs12('koji', 'test_system', passphrase='test')
